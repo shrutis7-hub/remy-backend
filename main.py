@@ -8,6 +8,10 @@ import os
 load_dotenv()
 app = FastAPI()
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 # Allow Lovable frontend to call this API
 app.add_middleware(
     CORSMiddleware,
