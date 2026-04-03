@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import snowflake.connector
-from openai import OpenAI
 from groq import Groq
 from dotenv import load_dotenv
 import os
