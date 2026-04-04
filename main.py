@@ -112,7 +112,7 @@ def get_ai_recommendation(preferences: dict):
                noise_level, has_outdoor_seating, has_parking, accepts_reservations
         FROM REMY_DB.CORE.RESTAURANTS
     """)
-    rows = cursor.fetchall()
+    rows = cursor.fetchmany(20)
     cursor.close()
     conn.close()
 
