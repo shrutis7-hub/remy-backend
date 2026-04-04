@@ -107,12 +107,43 @@ def get_ai_recommendation(preferences: dict):
     # Pull restaurants from Snowflake
     conn = get_snowflake_connection()
     cursor = conn.cursor()
-    cursor.execute("""
+
+    cuisines = preferences.get('cuisines', [])
+budget = preferences.get('budget_range', '')
+
+# Map budget to price range
+price_map = {
+    "Under $20": ["$"],
+    "$20-$40": ["$", "$$"],
+    "$40-$75": ["$$", "$$$"],
+    "$75+": ["$$$", "$$$$"]
+}
+price_ranges = price_map.get(budget, ["$", "$$", "$$$"])
+price_placeholders = ",".join(["%s"] * len(price_ranges))
+
+if cuisines:
+    cuisine_placeholders = ",".join(["%s"] * len(cuisines))
+    cursor.execute(f"""
         SELECT name, cuisine_type, price_range, avg_rating,
                noise_level, has_outdoor_seating, has_parking, accepts_reservations
         FROM REMY_DB.CORE.RESTAURANTS
-    """)
-    rows = cursor.fetchmany(20)
+        WHERE cuisine_type IN ({cuisine_placeholders})
+        AND price_range IN ({price_placeholders})
+        ORDER BY avg_rating DESC
+        LIMIT 20
+    """, (*cuisines, *price_ranges))
+else:
+    cursor.execute(f"""
+        SELECT name, cuisine_type, price_range, avg_rating,
+               noise_level, has_outdoor_seating, has_parking, accepts_reservations
+        FROM REMY_DB.CORE.RESTAURANTS
+        WHERE price_range IN ({price_placeholders})
+        ORDER BY avg_rating DESC
+        LIMIT 20
+    """, (*price_ranges,))
+
+rows = cursor.fetchall()        
+
     cursor.close()
     conn.close()
 
@@ -126,6 +157,9 @@ def get_ai_recommendation(preferences: dict):
     # Build the AI prompt
     prompt = f"""
 You are Remy, a friendly restaurant recommendation assistant.
+Write match_reason as a specific, personal explanation starting with "Remy picked this because..." 
+Reference the actual group preferences — mention group size, dietary needs, budget, or must-haves where relevant.
+Keep it under 20 words and conversational.
 
 A user has shared the following preferences:
 - Occasion: {preferences.get('occasion')}
@@ -149,7 +183,7 @@ Just the raw JSON array like this:
     "cuisine_type": "Cuisine",
     "price_range": "$$",
     "avg_rating": 4.7,
-    "match_reason": "Perfect for date night"
+    "match_reason": "Remy picked this because everyone wanted Thai under $30 and this spot has outdoor seating for your group of 4"
   }},
   {{
     "name": "Restaurant Name 2",
