@@ -12,12 +12,11 @@ app = FastAPI()
 def health():
     return {"status": "ok"}
 
-# Allow Lovable frontend to call this API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
