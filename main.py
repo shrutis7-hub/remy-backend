@@ -109,40 +109,40 @@ def get_ai_recommendation(preferences: dict):
     cursor = conn.cursor()
 
     cuisines = preferences.get('cuisines', [])
-budget = preferences.get('budget_range', '')
+    budget = preferences.get('budget_range', '')
 
-# Map budget to price range
-price_map = {
-    "Under $20": ["$"],
-    "$20-$40": ["$", "$$"],
-    "$40-$75": ["$$", "$$$"],
-    "$75+": ["$$$", "$$$$"]
-}
-price_ranges = price_map.get(budget, ["$", "$$", "$$$"])
-price_placeholders = ",".join(["%s"] * len(price_ranges))
+    # Map budget to price range
+    price_map = {
+        "Under $20": ["$"],
+        "$20-$40": ["$", "$$"],
+        "$40-$75": ["$$", "$$$"],
+        "$75+": ["$$$", "$$$$"]
+    }
+    price_ranges = price_map.get(budget, ["$", "$$", "$$$"])
+    price_placeholders = ",".join(["%s"] * len(price_ranges))
 
-if cuisines:
-    cuisine_placeholders = ",".join(["%s"] * len(cuisines))
-    cursor.execute(f"""
-        SELECT name, cuisine_type, price_range, avg_rating,
-               noise_level, has_outdoor_seating, has_parking, accepts_reservations
-        FROM REMY_DB.CORE.RESTAURANTS
-        WHERE cuisine_type IN ({cuisine_placeholders})
-        AND price_range IN ({price_placeholders})
-        ORDER BY avg_rating DESC
-        LIMIT 20
-    """, (*cuisines, *price_ranges))
-else:
-    cursor.execute(f"""
-        SELECT name, cuisine_type, price_range, avg_rating,
-               noise_level, has_outdoor_seating, has_parking, accepts_reservations
-        FROM REMY_DB.CORE.RESTAURANTS
-        WHERE price_range IN ({price_placeholders})
-        ORDER BY avg_rating DESC
-        LIMIT 20
-    """, (*price_ranges,))
+    if cuisines:
+        cuisine_placeholders = ",".join(["%s"] * len(cuisines))
+        cursor.execute(f"""
+            SELECT name, cuisine_type, price_range, avg_rating,
+                   noise_level, has_outdoor_seating, has_parking, accepts_reservations
+            FROM REMY_DB.CORE.RESTAURANTS
+            WHERE cuisine_type IN ({cuisine_placeholders})
+            AND price_range IN ({price_placeholders})
+            ORDER BY avg_rating DESC
+            LIMIT 20
+        """, (*cuisines, *price_ranges))
+    else:
+        cursor.execute(f"""
+            SELECT name, cuisine_type, price_range, avg_rating,
+                   noise_level, has_outdoor_seating, has_parking, accepts_reservations
+            FROM REMY_DB.CORE.RESTAURANTS
+            WHERE price_range IN ({price_placeholders})
+            ORDER BY avg_rating DESC
+            LIMIT 20
+        """, (*price_ranges,))
 
-rows = cursor.fetchall()        
+    rows = cursor.fetchall()      
 
     cursor.close()
     conn.close()
